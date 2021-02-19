@@ -9,7 +9,6 @@
 
 using namespace std;
 
-
 template <typename Key_T, typename Val_T>
 class Hash_Map {
     int elems;
@@ -74,12 +73,13 @@ public:
 
 template<typename Key_T, typename Val_T>
 Hash_Map<Key_T, Val_T>::iterator::iterator(Hash_Map<Key_T, Val_T> *hash_table, pair<Key_T, Val_T> *hash_table_elem) {
-    hash<Key_T> raw_elem_hash;
-    int elem_hash = raw_elem_hash(hash_table_elem->first) % hash_table->buff_size;
+    hash<Key_T> raw_elem_hash; //создали функцию хеширования
+    int elem_hash = raw_elem_hash(hash_table_elem->first) % hash_table->buff_size; //хешируем ключ для доступа к
+                                                                                    //нужному списку
     list<pair<Key_T, Val_T>>* cur_hash_map_buff = hash_table->hash_buff;
-
     typename list<pair<Key_T, Val_T>> :: iterator iter = cur_hash_map_buff[elem_hash].begin(), end_iter = cur_hash_map_buff[elem_hash].end();
 
+    //Проходим по списку до нужного значения
     while(*iter != *hash_table_elem && iter != end_iter) {
         iter++;
     }
@@ -98,12 +98,13 @@ void Hash_Map<Key_T, Val_T>::iterator::copy(const iterator& that) {
 
 template<typename Key_T, typename Val_T>
 Hash_Map<Key_T, Val_T>::iterator::iterator(Hash_Map<Key_T, Val_T> *hash_table, typename list<pair<Key_T, Val_T>>::iterator iter) {
+    //используем конструктор с передачей указателя на элемент таблицы
     Hash_Map<Key_T, Val_T>::iterator n_iter = Hash_Map<Key_T, Val_T>::iterator(hash_table, &(*iter));
     this->copy(n_iter);
 }
 
 template<typename Key_T, typename Val_T>
-Hash_Map<Key_T, Val_T>::iterator::iterator(const Hash_Map::iterator &that): hash_table(that.hash_table), list_ind(that.list_ind) {
+Hash_Map<Key_T, Val_T>::iterator::iterator(const Hash_Map::iterator &that){
     this->copy(that);
 }
 
@@ -144,7 +145,7 @@ typename Hash_Map<Key_T, Val_T>::iterator Hash_Map<Key_T, Val_T>::iterator::oper
 
 template<typename Key_T, typename Val_T>
 pair<Key_T, Val_T> &Hash_Map<Key_T, Val_T>::iterator::operator*() {
-    return *(this->cur_elem_iter);
+    return *(this->cur_elem_iter);  //возвращаем указатель на элемент (пару ключ-значение)
 }
 
 template<typename Key_T, typename Val_T>
@@ -173,7 +174,6 @@ Hash_Map<Key_T, Val_T>::Hash_Map(int sz, int list_limit) {
         p++;
     }*/
 
-
     this->buff_size = sz;
     this->elems = 0;
     this->hash_list_limit = list_limit;
@@ -196,7 +196,8 @@ typename Hash_Map<Key_T, Val_T>::iterator Hash_Map<Key_T, Val_T>::begin() {
     while(hash_ind < sz){
         if(this->hash_buff[hash_ind].size() != 0) {
             typename list<pair<Key_T, Val_T>> :: iterator head = this->hash_buff[hash_ind].begin();
-            return typename Hash_Map<Key_T, Val_T>::iterator::iterator(this, head);
+            return typename Hash_Map<Key_T, Val_T>::iterator(this, head); //до этого был ПРЯМОЙ вызов конструктора
+                                                                            //(дописать ::iterator)
         }
         hash_ind++;
     }
@@ -205,8 +206,6 @@ typename Hash_Map<Key_T, Val_T>::iterator Hash_Map<Key_T, Val_T>::begin() {
 
 }
 
-//template<typename Key_T, typename Val_T>
-//typename Hash_Map<Key_T, Val_T>::iterator Hash_Map<Key_T, Val_T>::end()
 
 template<typename Key_T, typename Val_T>
 Hash_Map<Key_T, Val_T>& Hash_Map<Key_T, Val_T>::operator=(const Hash_Map<Key_T, Val_T>& that) {
@@ -219,7 +218,7 @@ Hash_Map<Key_T, Val_T>& Hash_Map<Key_T, Val_T>::operator=(const Hash_Map<Key_T, 
         n_hash_buff[i] = that.hash_buff[i];
     }
 
-    this->clean();
+    this->clean(); //удаляем предыдущий буффер
     this->hash_buff = n_hash_buff;
 
     return *this;
@@ -229,12 +228,15 @@ Hash_Map<Key_T, Val_T>& Hash_Map<Key_T, Val_T>::operator=(const Hash_Map<Key_T, 
 
 template <typename Key_T, typename Val_T>
 void Hash_Map<Key_T, Val_T>::rehash() {
+    //Меняется как число ячеек, так и длины списков
     Hash_Map<Key_T, Val_T> n_hash_map = Hash_Map(this->buff_size * 2, log(this->buff_size) / 1);
 
     Hash_Map<Key_T, Val_T>::iterator iter;
     for(iter = this->begin(); iter != this->end(); ++iter) {
         n_hash_map.add(iter->first, iter->second);
     }
+    n_hash_map.elems = this->get_elems();
+
     *this = n_hash_map;
 }
 
@@ -242,10 +244,11 @@ template<typename Key_T, typename Val_T>
 void Hash_Map<Key_T, Val_T>::add(Key_T key, Val_T value) {
     
 	typename Hash_Map<Key_T, Val_T>::iterator key_elem_it = this->get_value(key);
-	if (key_elem_it.is_end()) {  //если это end хэш-таблицы
+	if (key_elem_it.is_end()) { //если элемента с таким ключом нет
 		hash<Key_T> key_raw_hash;
 		int key_hash = key_raw_hash(key) % this->buff_size;
 
+		//Если список с этим ключом уже заполнен
 		if (this->hash_buff[key_hash].size() == this->hash_list_limit) {
 			this->rehash();
 			this->add(key, value);
@@ -257,7 +260,7 @@ void Hash_Map<Key_T, Val_T>::add(Key_T key, Val_T value) {
 
         this->elems++;
     }
-	else {
+	else { //ключ повторяется => заменяем значение
 		key_elem_it->second = value;
 	}
     
@@ -288,12 +291,12 @@ typename Hash_Map<Key_T, Val_T>::iterator Hash_Map<Key_T, Val_T>::get_value(Key_
     int key_hash = key_raw_hash(key) % this->buff_size;
     list<pair<Key_T, Val_T>>& cur_hash_list = this->hash_buff[key_hash];
 
-    int cur_list_size = cur_hash_list.size();
+    //int cur_list_size = cur_hash_list.size();
     typename list<pair<Key_T, Val_T>>::iterator iter = cur_hash_list.begin(), end_it = cur_hash_list.end();
 
     while (end_it != iter) {
         if (iter->first == key) {
-            return typename Hash_Map<Key_T, Val_T>::iterator::iterator(this, iter);
+            return typename Hash_Map<Key_T, Val_T>::iterator(this, iter); //до этого бы прямой вызов конструктора
         }
         ++iter;
     }

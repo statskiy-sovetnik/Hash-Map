@@ -4,6 +4,9 @@
 #include <math.h>
 #include "Hash_Map.h"
 
+string INPUT_FILE_PATH(R"(D:\Programming\ClionProjects\Task3\input.txt)");
+string OUTPUT_FILE_PATH(R"(D:\Programming\ClionProjects\Task3\output.txt)");
+
 using namespace std;
 
 template <typename Key_T, typename Val_T>
@@ -21,8 +24,12 @@ void execute_types(char key_t, char val_t, ofstream* outp, ifstream* inp);
 int main() {
 
     char key_type, val_type;
-    ifstream inp("input.txt");
-    ofstream outp("output.txt");
+    ifstream inp(INPUT_FILE_PATH);
+    ofstream outp(OUTPUT_FILE_PATH);
+
+    if(!inp.is_open() || !outp.is_open()) {
+        throw "Unable to create file stream objects";
+    }
 
     inp >> key_type >> val_type;
     execute_types(key_type, val_type, &outp, &inp);
@@ -31,6 +38,7 @@ int main() {
     outp.close();
 }
 
+//Переход от входных данных с типом ключа к шаблонам
 void execute_types(char key_t, char val_t, ofstream* outp, ifstream* inp) {
     if(key_t == 'I') {
         execute_val_t<int>(val_t, outp, inp);
@@ -43,6 +51,7 @@ void execute_types(char key_t, char val_t, ofstream* outp, ifstream* inp) {
     }
 }
 
+//Передача типа значения в шаблонную функцию
 template <typename Key_T>
 void execute_val_t(char val_t, ofstream* outp, ifstream* inp) {
     if(val_t == 'I') {
@@ -88,8 +97,8 @@ Hash_Map<Key_T, Val_T>* execute_commands(ifstream* inp) {
 template <typename Key_T, typename Val_T>
 void type_elem_nums(ofstream* outp, ifstream* inp) {
     Hash_Map<Key_T, Val_T>* hash_table = execute_commands<Key_T, Val_T>(inp);
-    *outp << hash_table->get_elems() << " ";
-    *outp << hash_table->count_unique();
+    *outp << hash_table->get_elems() << " "; //возвращает число элементов хеш-таблицы
+    *outp << hash_table->count_unique(); //число уникальных элементов хеш-таблицы (с неповторяющимися значениями)
 
     hash_table->~Hash_Map();
 }
